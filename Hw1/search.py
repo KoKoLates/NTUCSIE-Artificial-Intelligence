@@ -1,3 +1,24 @@
+# search.py
+# ---------------
+# Licensing Information:  You are free to use or extend this projects for
+# educational purposes provided that (1) you do not distribute or publish
+# solutions, (2) you retain this notice, and (3) you provide clear
+# attribution to the University of Illinois at Urbana-Champaign
+#
+# Created by Michael Abir (abir2@illinois.edu) on 08/28/2018
+# Modified by Shang-Tse Chen (stchen@csie.ntu.edu.tw) on 03/03/2022
+
+"""
+This is the main entry point for HW1. You should only modify code
+within this file -- the unrevised staff files will be used for all other
+files and classes when code is run, so be careful to not modify anything else.
+"""
+# Search should return the path.
+# The path should be a list of tuples in the form (row, col) that correspond
+# to the positions of the path taken by your search algorithm.
+# maze is a Maze object based on the maze from the file specified by input filename
+# searchMethod is the search method specified by --method flag (bfs,dfs,astar,astar_multi,fast)
+
 
 from maze import Maze
 
@@ -31,7 +52,7 @@ def astar_corner(maze:Maze):
     """
     A* searching for corner target problem.
     """
-    return searching(maze, PriorityQueue(), heuristic_corner)
+    return searching(maze, PriorityQueue(), heuristic_multiple)
 
 
 def astar_multi(maze):
@@ -45,57 +66,77 @@ def fast(maze):
     """
     # TODO: Write your code here
     return []
-
+    
 class Node(object):
-    """ Node object store the information of position in the map """
-    def __init__(self, pose:tuple, path:list=[], priority:int=0) -> None:
-        self.pose: tuple = pose
+    def __init__(self, state: tuple[tuple, set], path: list, priority: int=0) -> None:
+        """ node object store the information for current position
+        @param state: a tuple store the current pose and unvisited target
+        @param path: the path from the root node to current node
+        @param priority: the priority weight of the nod
+        """
+        self.state: tuple[tuple, set] = state
         self.path: list = path
         self.priority: int = priority
 
+    def __str__(self) -> str:
+        """ print out the information of the node
+        @return: the node information
+        @rtype: str
+        """
+        return f"State: pose -> {self.state[0]} unvisited target -> {self.state[1]}\n\
+            Path Length: {len(self.path)} | Priority: {self.priority}"
+
 class Queue(object):
     def __init__(self) -> None:
-        self.queue: list = []
+        self.container: list[Node] = []
 
-    def push(self, node:Node) -> None:
-        self.queue.insert(0, node)
-
+    def push(self, node: Node) -> None:
+        """ insert the node into the container at head
+        @param node: the insert node
+        """
+        self.container.insert(0, node)
+    
     def pop(self) -> Node:
-        return self.queue.pop() if not self.isEmpty() else None
+        """ remove and return the node in the tail of container
+        @return: the node in the tail of container
+        @rtype: Node
+        """
+        return self.container.pop() if not self.isEmpty() else None
+    
+    def isEmpty(self) -> bool:
+        """ check the container is empty or not
+        @return: the checking result
+        @rtype: bool
+        """
+        return not len(self.container)
     
     def clear(self) -> None:
-        self.queue.clear()
-
-    def isEmpty(self) -> bool:
-        return len(self.queue) == 0
+        """ clear the contents of the container """
+        self.container.clear()    
     
-class PriorityQueue(object):
-    def __init__(self) -> None:
-        self.heap: list = []
 
-    def push(self, node:Node) -> None:
+class PriorityQueue(Queue):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def push(self, node: Node) -> None:
+        """ insert a node into the priority queue
+        @param node: the node to be insert
+        """
         if self.isEmpty():
-            self.heap.append(node)
+            self.container.append(node)
             return
         
-        for idx in range(len(self.heap)):
-            if node.priority >= self.heap[idx].priority:
-                self.heap.insert(idx, node)
+        for index in range(len(self.container)):
+            if node.priority >= self.container[index].priority:
+                self.container.insert(index, node)
                 break
+
             else:
-                if idx == len(self.heap) - 1:
-                    self.heap.append(node)
+                if index == len(self.container) - 1:
+                    self.container.append(node)
 
-    def pop(self) -> Node:
-        return self.heap.pop() if not self.isEmpty() else None
-    
-    def clear(self) -> None:
-        self.heap.clear()
-
-    def isEmpty(self) -> bool:
-        return len(self.heap) == 0
-
-def searching(maze: Maze, container, heuristic=None) -> list:
+def searching(maze: Maze, container: Queue | PriorityQueue, heuristic=None) -> list:
     """
     A state representation model for searching algorithms.
     @param maze: The maze problem for searching.
@@ -106,55 +147,82 @@ def searching(maze: Maze, container, heuristic=None) -> list:
     @rtype: list
     """
     start: tuple = maze.getStart()
-    target: list = maze.getObjectives()
-    if isinstance(container, Queue):
-        container.push(Node(start, [start]))
-    else: # Priority Queue for A* search
-        container.push(Node(start, [start], heuristic(maze, start)))
-    
-    visited: list = []
+    state: tuple[tuple, list] = (start, maze.getObjectives())
+    if maze.isObjective(start[0], start[1]):
+        state[1].remove(start)
+
+    container.push(Node(
+        state, [start], 
+        heuristic(state) if heuristic else None
+    ))
+
+    visited: list[str] = [] # create a list to record the state that has been visited
     while not container.isEmpty():
         node: Node = container.pop()
-        print(node.pose)
-        print(node.path)
-        print(target)
-        if node.pose not in visited:
-            visited.append(node.pose)
-        else:
-            continue
+        pose, unvisited_target = node.state
 
-        if node.pose in target:
-            target = list(set(target) - set(node.pose))
-            if not target:
-                return node.path
+        if not len(unvisited_target): # all target has been visited
+            return node.path            
             
-            else:
-                visited.clear()
-                continue
- 
-        for n in maze.getNeighbors(node.pose[0], node.pose[1]):
-            if isinstance(container, Queue):
-                container.push(Node(n, node.path + [n]))
-            else: # Priority Queue for A* search
-                container.push(Node(n, node.path + [n], heuristic(maze, n, node)))
-       
+        for n in maze.getNeighbors(pose[0], pose[1]):
+            next_state: tuple[tuple, list] = (n, unvisited_target)
+            print(n, unvisited_target)
+            if str(next_state) not in visited:
+                visited.append(str(next_state))
+                if maze.isObjective(n[0], n[1]):
+                    next_state[1].remove(n)
+                container.push(Node(
+                    next_state, node.path + [n],
+                    heuristic(next_state) + len(node.path) if heuristic else None
+                ))
+
     return []
 
-def heuristic_single(maze:Maze, pose:tuple, parent:Node=None) -> int:
-    """
-    Heuristic function design for single target finding.
-    The classic A* searching heuristic combine the uniform cost and manhattan distance.
-    @param maze: The problem maze
-    @param pose: The current pose in the problem maze
-    @param huristic: The parent node uniform cost
 
-    @return: The heuristuc in the current pose
+def manhattan(pose1: tuple, pose2: tuple) -> int:
+    """ Calculate the manhattan distance between two poses
+    @param poas1: the first pose
+    @param pose2: the other pose
+    @return: the manhatta distance between two poses
     @rtype: int
     """
-    target = maze.getObjectives()[0]
-    g = len(parent.path) if parent else 0
-    h = abs(pose[0] - target[0]) + abs(pose[1] - target[1])
-    return g + h
+    return abs(pose1[0] - pose2[0]) + abs(pose1[1] - pose2[1])
+
+
+def heuristic_single(state: tuple[tuple, set]) -> int:
+    """
+    """
+    pose, unvisitied = state
+    return manhattan(pose, unvisitied[0])
+
+def heuristic_multiple(state: tuple[tuple, list]) -> int:
+    """
+    """
+    pose, unvisited_target = state
+    print(pose, unvisited_target)
+    if not len(unvisited_target):
+        return 0
+    
+    closest_target: tuple = unvisited_target[0]
+    closest_distance: int = manhattan(pose, unvisited_target[0])
+    if len(unvisited_target) == 1:
+        return closest_distance
+
+    for target in unvisited_target[1:]:
+        distance = manhattan(pose, target)
+        if distance < closest_distance:
+            closest_target = target
+            closest_distance = distance
+
+        
+        
+        farest_distance = 0
+        for target in unvisited_target:
+            farest_distance = max(farest_distance, manhattan(closest_target, target))
+
+        return closest_distance + farest_distance
+
+
 
 
 def heuristic_corner(maze:Maze, pose:tuple, parent:Node=None) -> int:
@@ -206,3 +274,62 @@ def heuristic_corner(maze:Maze, pose:tuple, parent:Node=None) -> int:
 
     # return heuristic
     
+def astar_test(maze: Maze, container: PriorityQueue) -> list[tuple]:
+    """
+    Testing on A* searching algorithm to fin out a transition model
+    """
+    def huristic(state):
+        pose, unvisited_target = state
+        if not len(unvisited_target):
+            return 0
+        
+        import math
+        def manhattan(pose1: tuple, pose2: tuple) -> int:
+            return abs(pose1[0] - pose2[0]) + abs(pose1[1] - pose2[1])
+
+        cloest_distance, cloest_target = math.inf, None
+        for t in unvisited_target:
+            if manhattan(pose, t) < cloest_distance:
+                cloest_distance = manhattan(pose, t)
+                cloest_target = t
+
+        if len(unvisited_target) == 1:
+            return cloest_distance
+        
+        max_distance = 0
+        for t in unvisited_target:
+            max_distance = max(max_distance, manhattan(cloest_target, t))
+            
+        return cloest_distance + max_distance
+    
+
+    ## model start here
+    start: tuple = maze.getStart()
+    state: tuple = (start, set(maze.getObjectives()))
+    if maze.isObjective(start[0], start[1]):
+        state[1].discard(start)
+
+    container.push(Node(start, [start], huristic(state)))
+    closed: set[str] = set()
+
+    while not container.isEmpty():
+        node: Node = container.pop()
+        pose, unvisited_target = state
+
+        if not len(unvisited_target):
+            return node.path
+        
+        if str(state) not in closed:
+            closed.add(str(state))
+            for n in maze.getNeighbors(pose[0], pose[1]):
+                next_unvisited_target = unvisited_target.copy()
+                next_state = (n, next_unvisited_target)
+                if maze.isObjective(n[0], n[1]):
+                    next_state[1].discard(n)
+
+                next_path = node.path.copy()
+                next_path.append(n)
+
+                container.push(next_state, next_path, len(next_path) - 1 + huristic(next_state))
+
+    return []

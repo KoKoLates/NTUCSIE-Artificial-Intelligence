@@ -1,3 +1,17 @@
+# maze.py
+# ---------------
+# Licensing Information:  You are free to use or extend this projects for
+# educational purposes provided that (1) you do not distribute or publish
+# solutions, (2) you retain this notice, and (3) you provide clear
+# attribution to the University of Illinois at Urbana-Champaign
+#
+# Created by Michael Abir (abir2@illinois.edu) on 08/28/2018
+# Modified by Rahul Kunji (rahulsk2@illinois.edu) on 01/16/2019
+
+"""
+This file contains the Maze class, which reads in a maze file and creates
+a representation of the maze that is exposed through a simple interface.
+"""
 
 import re, copy
 from collections import Counter
