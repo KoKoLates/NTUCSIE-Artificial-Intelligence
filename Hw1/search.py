@@ -19,8 +19,9 @@ files and classes when code is run, so be careful to not modify anything else.
 # maze is a Maze object based on the maze from the file specified by input filename
 # searchMethod is the search method specified by --method flag (bfs,dfs,astar,astar_multi,fast)
 
-
+import math, heapq
 from maze import Maze
+from typing import Callable
 
 def search(maze:Maze, searchMethod:str):
     return {
@@ -32,8 +33,8 @@ def search(maze:Maze, searchMethod:str):
     }.get(searchMethod)(maze)
 
 def bfs(maze: Maze) -> list[tuple]:
-    """
-    Breadth First Search algorithms.
+    """Breadth First Search algorithms.
+    this search algorithm is written for part 1.
     @param maze: The maze to execute the search on.
     @return path: a list of tuples containing the coordniates of each state in the computed path.
     @rtype: list[tuple]
@@ -41,62 +42,45 @@ def bfs(maze: Maze) -> list[tuple]:
     return searching(maze, Queue())
 
 def astar(maze: Maze) -> list[tuple]:
-    """
-    A* Search algorithms.
+    """A* Search algorithms.
+    this search algorithm is written for part 1 that only single target
     @param maze: The maze to execute the search on.
     @return path: a list of tuples containing the coordniates of each state in the computed path.
     """
     return searching(maze, PriorityQueue(), heuristic_single)
 
-def astar_corner(maze:Maze):
-    """
-    A* searching for corner target problem.
+def astar_corner(maze:Maze) -> list[tuple]:
+    """A* searching for part 2 of corner target
+    @param maze: the maze to execute the search on.
+    @return path: a list of tuples containing the coordniates of each state in the computed path.
     """
     return searching(maze, PriorityQueue(), heuristic_multiple)
 
-
 def astar_multi(maze):
+    """A* searching for part 3 of multiple target
+    @param maze: the maze to execute the search on.
+    @return path: a list of tuples containing the coordniates of each state in the computed path.
     """
-    """
-    # TODO: Write your code here
-    return []
+    return searching(maze, PriorityQueue(), heuristic_multiple)
 
 def fast(maze):
+    """fast searching for part 4 of multiple target
+    @param maze: the maze to execute the search on.
+    @return path: a list of tuples containing the coordniates of each state in the computed path.
     """
-    """
-    # TODO: Write your code here
-    return []
-    
-class Node(object):
-    def __init__(self, state: tuple[tuple, set], path: list, priority: int=0) -> None:
-        """ node object store the information for current position
-        @param state: a tuple store the current pose and unvisited target
-        @param path: the path from the root node to current node
-        @param priority: the priority weight of the nod
-        """
-        self.state: tuple[tuple, set] = state
-        self.path: list = path
-        self.priority: int = priority
-
-    def __str__(self) -> str:
-        """ print out the information of the node
-        @return: the node information
-        @rtype: str
-        """
-        return f"State: pose -> {self.state[0]} unvisited target -> {self.state[1]}\n\
-            Path Length: {len(self.path)} | Priority: {self.priority}"
+    return searching(maze, PriorityQueue(), heuristic_fast)
 
 class Queue(object):
     def __init__(self) -> None:
-        self.container: list[Node] = []
+        self.container: list[tuple] = []
 
-    def push(self, node: Node) -> None:
+    def push(self, node: tuple[int, tuple, list]) -> None:
         """ insert the node into the container at head
         @param node: the insert node
         """
         self.container.insert(0, node)
     
-    def pop(self) -> Node:
+    def pop(self) -> tuple[int, tuple, list]:
         """ remove and return the node in the tail of container
         @return: the node in the tail of container
         @rtype: Node
@@ -119,24 +103,23 @@ class PriorityQueue(Queue):
     def __init__(self) -> None:
         super().__init__()
 
-    def push(self, node: Node) -> None:
-        """ insert a node into the priority queue
-        @param node: the node to be insert
+    def push(self, node: tuple[int, tuple, list]) -> None:
+        """ insert a new node (tuple) into the container 
+        then using heapq to heap sort the container 
+        @param node: the information for the input pose
         """
-        if self.isEmpty():
-            self.container.append(node)
-            return
-        
-        for index in range(len(self.container)):
-            if node.priority >= self.container[index].priority:
-                self.container.insert(index, node)
-                break
+        heapq.heappush(self.container, node)
 
-            else:
-                if index == len(self.container) - 1:
-                    self.container.append(node)
+    def pop(self) -> tuple[int, tuple, list]:
+        """ remove and return the min heuristic node in the container
+        @return: the heuristic, state and path of the node
+        @rtype: tuple[int, tuple, list]
+        """
+        return heapq.heappop(self.container)
+    
 
-def searching(maze: Maze, container: Queue | PriorityQueue, heuristic=None) -> list:
+def searching(maze: Maze, container: Queue | PriorityQueue, 
+              heuristic: Callable=None) -> list[tuple]:
     """
     A state representation model for searching algorithms.
     @param maze: The maze problem for searching.
@@ -144,36 +127,34 @@ def searching(maze: Maze, container: Queue | PriorityQueue, heuristic=None) -> l
     @param heuristic: The heuristic function using for searching.
 
     @return: The path from start point to target.
-    @rtype: list
+    @rtype: list[tuple]
     """
     start: tuple = maze.getStart()
-    state: tuple[tuple, list] = (start, maze.getObjectives())
+    state: tuple[tuple, set] = (start, set(maze.getObjectives()))
     if maze.isObjective(start[0], start[1]):
-        state[1].remove(start)
+        state[1].discard(start)
 
-    container.push(Node(
-        state, [start], 
-        heuristic(state) if heuristic else None
+    container.push((
+        heuristic(state) if heuristic else None,
+        state, [start] 
     ))
-
-    visited: list[str] = [] # create a list to record the state that has been visited
+    visisted: list[str] = []
     while not container.isEmpty():
-        node: Node = container.pop()
-        pose, unvisited_target = node.state
-
-        if not len(unvisited_target): # all target has been visited
-            return node.path            
-            
-        for n in maze.getNeighbors(pose[0], pose[1]):
-            next_state: tuple[tuple, list] = (n, unvisited_target)
-            print(n, unvisited_target)
-            if str(next_state) not in visited:
-                visited.append(str(next_state))
+        _, state, path = container.pop()
+        pose, unvisited_target = state
+        if not len(unvisited_target): # all target have been visited
+            return path
+        
+        if str(state) not in visisted:
+            visisted.append(str(state))
+            for n in maze.getNeighbors(pose[0], pose[1]):
+                next_state = (n, unvisited_target.copy())
                 if maze.isObjective(n[0], n[1]):
-                    next_state[1].remove(n)
-                container.push(Node(
-                    next_state, node.path + [n],
-                    heuristic(next_state) + len(node.path) if heuristic else None
+                    next_state[1].discard(n)
+
+                container.push((
+                    heuristic(next_state) + len(path) if heuristic else None,
+                    next_state, path + [n]
                 ))
 
     return []
@@ -190,146 +171,45 @@ def manhattan(pose1: tuple, pose2: tuple) -> int:
 
 
 def heuristic_single(state: tuple[tuple, set]) -> int:
-    """
+    """ The heuristic function for single target mission 
+    the basic concept is to return the manhattan distance between
+    current position and target position
+    @param state: the information of current pose and unvisited target
+    @return: heuristic evaluated at current pose
+    @rtype: int
     """
     pose, unvisitied = state
-    return manhattan(pose, unvisitied[0])
+    return manhattan(pose, list(unvisitied)[0]) if unvisitied else 0
 
 def heuristic_multiple(state: tuple[tuple, list]) -> int:
+    """ the heuristic function for multiple (corner) target mission
+    @param state: the information of current pose and unvisited target
+    @return: heuristic evaluated at current pose
+    @rtype: int
     """
-    """
-    pose, unvisited_target = state
-    print(pose, unvisited_target)
-    if not len(unvisited_target):
+    pose, unvisitied = state
+    if not len(unvisitied):
         return 0
     
-    closest_target: tuple = unvisited_target[0]
-    closest_distance: int = manhattan(pose, unvisited_target[0])
-    if len(unvisited_target) == 1:
-        return closest_distance
-
-    for target in unvisited_target[1:]:
-        distance = manhattan(pose, target)
-        if distance < closest_distance:
+    if len(unvisitied) == 1:
+        return heuristic_single(state)
+    
+    min_dist, closest_target = math.inf, None
+    for target in unvisitied:
+        if manhattan(pose, target) < min_dist:
+            min_dist = manhattan(pose, target)
             closest_target = target
-            closest_distance = distance
 
-        
-        
-        farest_distance = 0
-        for target in unvisited_target:
-            farest_distance = max(farest_distance, manhattan(closest_target, target))
-
-        return closest_distance + farest_distance
+    max_dist = max([manhattan(closest_target, target) for target in unvisitied])
+    return max_dist + min_dist
 
 
-
-
-def heuristic_corner(maze:Maze, pose:tuple, parent:Node=None) -> int:
+def heuristic_fast(state: tuple[tuple, list]) -> int:
+    """the heuristic function for multiple (corner) target mission
+    @param state: the information of current pose and unvisited target
+    @return: heuristic evaluated at current pose
+    @rtype: int
     """
-    The heuristic function for corner target path planning.
-    @param maze: The problem maze.
-    @param pose: The current pose.
-    @param heuristic: The heuristic of uniform cost.
-
-    @return: The current pose heuristic metric.
-    @rtpye: int
-    """
-    def manhattan_distance(pose1:tuple, pose2:tuple) -> int:
-        return abs(pose1[0] - pose2[0]) + abs(pose1[1] - pose2[1])
+    pose, unvisitied = state
+    return sum(manhattan(pose, target) for target in unvisitied)
     
-    if maze.isObjective(pose[0], pose[1]):
-        return 0
-    
-    target: list = maze.getObjectives()
-    unvisited_corner = list(set(target) - set(target).intersection(set(parent.path))) \
-        if parent else list(set(target))
-    
-    distance:list = []
-    for corner in unvisited_corner:
-        distance.append(manhattan_distance(pose, corner))
-
-    return max(distance)
-
-    # g = len(parent.path) if parent else 0    
-    # target: list = maze.getObjectives()
-    # unvisited_corner = list(set(target) - set(target).intersection(set(parent.path))) \
-    #     if parent else list(set(target) - set(pose))
-    # previous_pose: tuple = pose
-    # heuristic: int = 0
-
-    # while unvisited_corner:
-    #     closest_corner: tuple = unvisited_corner[0]
-    #     closest_corner_distance: int = manhattan_distance(previous_pose, closest_corner)
-
-    #     for i in unvisited_corner[1:]:
-    #         distance = manhattan_distance(previous_pose, i)
-    #         if distance < closest_corner_distance:
-    #             closest_corner = i
-    #             closest_corner_distance = distance
-
-    #     heuristic += closest_corner_distance
-    #     unvisited_corner.remove(closest_corner)
-    #     previous_pose = closest_corner
-
-    # return heuristic
-    
-def astar_test(maze: Maze, container: PriorityQueue) -> list[tuple]:
-    """
-    Testing on A* searching algorithm to fin out a transition model
-    """
-    def huristic(state):
-        pose, unvisited_target = state
-        if not len(unvisited_target):
-            return 0
-        
-        import math
-        def manhattan(pose1: tuple, pose2: tuple) -> int:
-            return abs(pose1[0] - pose2[0]) + abs(pose1[1] - pose2[1])
-
-        cloest_distance, cloest_target = math.inf, None
-        for t in unvisited_target:
-            if manhattan(pose, t) < cloest_distance:
-                cloest_distance = manhattan(pose, t)
-                cloest_target = t
-
-        if len(unvisited_target) == 1:
-            return cloest_distance
-        
-        max_distance = 0
-        for t in unvisited_target:
-            max_distance = max(max_distance, manhattan(cloest_target, t))
-            
-        return cloest_distance + max_distance
-    
-
-    ## model start here
-    start: tuple = maze.getStart()
-    state: tuple = (start, set(maze.getObjectives()))
-    if maze.isObjective(start[0], start[1]):
-        state[1].discard(start)
-
-    container.push(Node(start, [start], huristic(state)))
-    closed: set[str] = set()
-
-    while not container.isEmpty():
-        node: Node = container.pop()
-        pose, unvisited_target = state
-
-        if not len(unvisited_target):
-            return node.path
-        
-        if str(state) not in closed:
-            closed.add(str(state))
-            for n in maze.getNeighbors(pose[0], pose[1]):
-                next_unvisited_target = unvisited_target.copy()
-                next_state = (n, next_unvisited_target)
-                if maze.isObjective(n[0], n[1]):
-                    next_state[1].discard(n)
-
-                next_path = node.path.copy()
-                next_path.append(n)
-
-                container.push(next_state, next_path, len(next_path) - 1 + huristic(next_state))
-
-    return []
