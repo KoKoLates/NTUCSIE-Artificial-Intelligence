@@ -120,12 +120,13 @@ class LinearModel:
         self.weights = np.zeros(n_features if self.model_type == 'linear' \
                                 else (n_features, n_classes))            
         
-        for itr in range(self.iterations):
+        for _ in range(self.iterations):
             self.weights -= self.learning_rate * self._compute_gradients(X, y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         X = np.insert(X, 0, 1, axis=1)
         # TODO: 4%
+        # Hint: Perform a matrix multiplication bwtween feature and weights here
         return X @ self.weights if self.model_type == 'linear' else \
             np.argmax(self._softmax(X @ self.weights), axis=1)
 
@@ -135,9 +136,18 @@ class LinearModel:
 
         if self.model_type == "linear":
             # TODO: 3%
+            # Hint:
+            # Calculate the gradients for linear regression by computing
+            # the dot product of X transposed and the difference between the
+            # predicted values and the true values, then normalize by the number of samples.
             return 1 / n_samples * (X.T @ (X @ self.weights - y))
         elif self.model_type == "logistic":
             # TODO: 3%
+            # Hint:
+            # Calculate the gradients for logistic regression by computing
+            # the dot product of X transposed and the difference between the one-hot
+            # encoded true values and the softmax of the predicted values,
+            # then normalize by the number of samples.
             y_enc = np.zeros((n_samples, n_classes), dtype=int)
             for i in range(n_samples):
                 y_enc[i, y[i]] = 1
@@ -201,10 +211,12 @@ class DecisionTree:
     def _create_leaf(self, y: np.ndarray):
         if self.model_type == "classifier":
             # TODO: 1%
+            # Hint: For classification, return the most common class in the given samples.
             values, counts = np.unique(y, return_counts=True)
             return values[np.argmax(counts)]
         else:
             # TODO: 1%
+            # Hint: For regression, return the mean of the given samples.
             return y.mean()
 
     def _find_best_split(self, X: np.ndarray, y: np.ndarray) -> tuple[int, float]:
@@ -241,19 +253,24 @@ class DecisionTree:
 
     def _gini_index(self, left_y: np.ndarray, right_y: np.ndarray) -> float:
         # TODO: 4%
+        # Hint:
+        # Calculate the Gini index for the left and right samples,
+        # then compute the weighted average based on the number of samples in each group.
         def _gini_calc(y: np.ndarray) -> float:
             p = np.array([(y == i).sum() / y.size for i in np.unique(y)])
             return 1 - (p ** 2).sum()
         
         return (left_y.size * _gini_calc(left_y) + right_y.size * _gini_calc(right_y)) / (left_y.size + right_y.size)
 
-
     def _mse(self, left_y: np.ndarray, right_y: np.ndarray) -> float:
         # TODO: 4%
+        # Hint: 
+        # Calculate the mean squared error for the left and right samples,
+        # then compute the weighted average based on the number of samples in each group.
         def _mse_calc(y: np.ndarray) -> float:
             return np.square(y - y.mean()).mean()
         
-        return (left_y.size * _mse_calc(left_y) + right_y * _mse_calc(right_y)) / (left_y.size + right_y.size)
+        return (left_y.size * _mse_calc(left_y) + right_y.size * _mse_calc(right_y)) / (left_y.size + right_y.size)
 
     def _traverse_tree(self, x: np.ndarray, node: dict):
         if isinstance(node, dict):
@@ -267,25 +284,50 @@ class DecisionTree:
 
 
 class RandomForest:
-    def __init__(
-        self,
-        n_estimators: int = 100,
-        max_depth: int = 5,
-        model_type: str = "classifier",
-    ):
+    def __init__(self, n_estimators: int = 100, max_depth: int = 5, 
+                 model_type: str = "classifier") -> None:
         # TODO: 1%
-        raise NotImplementedError
+        # Hint:
+        # Initialize a list of DecisionTree instances based on the
+        # specified number of estimators, max depth, and model type.
+        self.model_type = model_type
+        self.trees = [
+            DecisionTree(max_depth=max_depth, model_type=model_type)
+            for _ in range(n_estimators)
+        ]
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         for tree in self.trees:
             # TODO: 2%
-            # bootstrap_indices = np.random.choice(
-            raise NotImplementedError
+            # Hint:
+            # Generate bootstrap indices by random sampling with replacement,
+            # then fit each tree with the corresponding samples from X and y.
+            boostrap_indices = np.random.choice(X.shape[0], size=X.shape[0], replace=True)
+            sample_x = np.array([X[i] for i in boostrap_indices])
+            sample_y = np.array([y[i] for i in boostrap_indices])
+            tree.fit(sample_x, sample_y)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         # TODO: 2%
-        raise NotImplementedError
-
+        # Hint:
+        # Predict the output for each tree and combine the predictions based on 
+        # the model type (majority voting for classification or averaging for regression).
+        n_samples, n_features = X.shape
+        if self.model_type == 'classifier':
+            predictions_matrix = np.array([tree.predict(X) for tree in self.trees]).T
+            result = np.zeros(n_samples)
+            for i in range(n_samples):
+                values, counts = np.unique(predictions_matrix[i], return_counts=True)
+                result[i] = values[np.argmax(counts)]
+            
+            return result
+        else:
+            result = np.zeros(n_samples)
+            for tree in self.trees:
+                result += tree.predict(X)
+            
+            result /= len(self.trees)
+            return result
 
 # 4. Evaluation metrics
 def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -295,7 +337,9 @@ def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 def mean_squared_error(y_true, y_pred):
     # TODO: 1%
-    raise NotImplementedError
+    # Hint: 
+    # Calculate the mean squared error between the true and predicted values.
+    return np.square(np.subtract(y_true, y_pred)).mean()
 
 
 # 5. Main function
@@ -316,8 +360,6 @@ def main():
     decision_tree_classifier.fit(X_train, y_train)
     y_pred = decision_tree_classifier.predict(X_test)
     print("Decision Tree Classifier Accuracy:", accuracy(y_test, y_pred))
-
-    ipdb.set_trace()
 
     random_forest_classifier = RandomForest(model_type="classifier")
     random_forest_classifier.fit(X_train, y_train)
