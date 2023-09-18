@@ -12,7 +12,15 @@ class PCA:
 
     def fit(self, X: np.ndarray) -> None:
         #TODO: 10%
-        raise NotImplementedError
+        # Hint: Use existing method to calculate covariance matrix 
+        # and its eigenvalues and eigenvectors
+        self.mean: np.ndarray = np.mean(X, axis=0)
+        covariance_matrix = np.cov(X - self.mean, rowvar=False)
+
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+        
+
+
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         #TODO: 2%

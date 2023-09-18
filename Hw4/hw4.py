@@ -70,7 +70,7 @@ def reconstruction_loss(img_vec: np.ndarray, img_vec_reconstructed: np.ndarray) 
     """
     DO NOT MODIFY THIS FUNCTION.
     """
-    return ((img_vec - img_vec_reconstructed)**2).mean()
+    return ((img_vec - img_vec_reconstructed) ** 2).mean()
 
 def main():
     print("Loading data...")
@@ -138,5 +138,6 @@ def main():
     print(f"Reconstruction Loss with PCA: {reconstruction_loss_pca}")
     print(f"Reconstruction Loss with Autoencoder: {reconstruction_loss_ae}")
     print(f"Reconstruction Loss with DenoisingAutoencoder: {reconstruction_loss_deno_ae}")
+
 if __name__ == "__main__":
     main()
