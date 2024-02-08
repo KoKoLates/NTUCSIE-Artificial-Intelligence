@@ -14,7 +14,10 @@ from maze import Maze
 
 # The agant is only used when a human player is used, and is therefore not annotated much
 class Agent(object):
-    def __init__(self, pose:tuple, maze:Maze, blockSizeX:int, blockSizeY:int) -> None:
+    def __init__(
+            self, pose:tuple, maze:Maze, 
+            blockSizeX:int, blockSizeY:int
+        ) -> None:
         self.row, self.col = pose[0], pose[1]
         self.lastRow, self.lastCol = None, None
         self.needUpdate = True

@@ -14,16 +14,20 @@ initializes the pygame context, and handles the interface between the
 game and the search algorithm.
 """
 
-import sys, time, pygame, argparse
+import time
+import pygame
+import argparse
 
-from pygame.locals import *
-from agent import Agent
 from maze import Maze
+from agent import Agent
 from search import search
+from pygame.locals import *
 
 class Application(object):
-    def __init__(self, human:bool=True, scale:int=20,
-                 fps:int=30, alt_color:bool=False) -> None:
+    def __init__(
+            self, human:bool=True, scale:int=20, 
+            fps:int=30, alt_color:bool=False
+        ) -> None:
         self.running = True
         self.displaySurface = None
         self.scale = scale
@@ -48,13 +52,17 @@ class Application(object):
         self.blockSizeX = int(self.windowWidth / self.gridDim[1])
         self.blockSizeY = int(self.windowHeight / self.gridDim[0])
 
-        if self.__human:
-            self.agentRadius = min(self.blockSizeX, self.blockSizeY) / 4
-            self.agent = Agent(self.maze.getStart(), self.maze, self.blockSizeX, self.blockSizeY)
-
-    def execute(self, filename:str, searchMethod:str, save:str) -> None:
-        """
-        Execute the application for searching path in the maze
+        if not self.__human:
+            return
+        
+        self.agentRadius = min(self.blockSizeX, self.blockSizeY) / 4
+        self.agent = Agent(self.maze.getStart(), self.maze, self.blockSizeX, self.blockSizeY)
+            
+    def execute(
+            self, filename:str, 
+            searchMethod:str, save:str
+        ) -> None:
+        """ Execute the application for searching in the maze
         @param filename: the filename of the maze problem
         @param searchMethod: the name of searching algorithms
         @param save: the flag for saving the output image
@@ -83,10 +91,10 @@ class Application(object):
         if self.__human:
             self.drawPlayer()
         else:
-            print(f'[Results]\nPath Length: {len(path)} | ' + 
-                  f'State Explored: {statesExplored} | ' +
-                  f'Total Time: {total_time:.5f} sec | ' + 
-                  f'Validation: {self.maze.isValidPath(path)}')
+            print(f'[Results]\nPath Length: {len(path)}' + 
+                  f' | State Explored: {statesExplored}' +
+                  f' | Total Time: {total_time:.5f} sec' + 
+                  f' | Validation: {self.maze.isValidPath(path)}')
             self.drawPath(path)
         
         self.drawMaze()
@@ -111,17 +119,22 @@ class Application(object):
                 if event.type == pygame.QUIT:
                     raise SystemExit
                 
-            if self.__human:
-                if keys[K_UP]:
-                    self.agent.moveUp()
-                if keys[K_LEFT]:
-                    self.agent.moveLeft()
-                if keys[K_DOWN]:
-                    self.agent.moveDown()
-                if keys[K_RIGHT]: 
-                    self.agent.moveRight()
-                self.gameLoop()
+            if not self.__human:
+                continue
 
+            key_binds: dict = {
+                K_UP:   self.agent.moveUp,
+                K_DOWN: self.agent.moveDown,
+                K_RIGHT:self.agent.moveRight,
+                K_LEFT: self.agent.moveLeft
+            }
+
+            for key, movement in key_binds.items():
+                if keys[key]:
+                    movement()
+            
+            self.gameLoop()
+                
     def gameLoop(self):
         self.drawObjective()
         self.drawPlayer()
@@ -136,10 +149,10 @@ class Application(object):
         g_step = (end_color[1] - start_color[1]) / pathLength
         b_step = (end_color[2] - start_color[2]) / pathLength
 
-        red = start_color[0] + index * r_step
-        green = start_color[1] + index * g_step
-        blue = start_color[2] + index * b_step
-        return (red, green, blue)
+        r = start_color[0] + index * r_step
+        g = start_color[1] + index * g_step
+        b = start_color[2] + index * b_step
+        return (r, g, b)
 
     def drawPath(self, path:list) -> None:
         for p in range(len(path)):
@@ -147,21 +160,38 @@ class Application(object):
             self.drawSquare(path[p][0], path[p][1], color)
 
     def drawWall(self, row:int, col:int) -> None:
-        pygame.draw.rect(self.displaySurface, (0, 0, 0), 
-                         (col * self.blockSizeX, row * self.blockSizeY, 
-                          self.blockSizeX, self.blockSizeY), 0)
+        pygame.draw.rect(
+            self.displaySurface, (0, 0, 0), 
+            (
+                col * self.blockSizeX, 
+                row * self.blockSizeY, 
+                self.blockSizeX, 
+                self.blockSizeY
+            ), 0
+        )
         
     def drawCircle(self, row:int, col:int, color, radius=None) -> None:
         if radius is None:
             radius = min(self.blockSizeX, self.blockSizeY) / 4
-        pygame.draw.circle(self.displaySurface, color, 
-                           (int(col * self.blockSizeX + self.blockSizeX / 2), 
-                            int(row * self.blockSizeY + self.blockSizeY / 2)), int(radius))
+        pygame.draw.circle(
+            self.displaySurface, color, 
+            (
+                int(col * self.blockSizeX + self.blockSizeX / 2), 
+                int(row * self.blockSizeY + self.blockSizeY / 2)
+            ), 
+            int(radius)
+        )
 
     def drawSquare(self, row:int, col:int, color) -> None:
-        pygame.draw.rect(self.displaySurface, color, 
-                         (col * self.blockSizeX , row * self.blockSizeY, 
-                          self.blockSizeX, self.blockSizeY), 0)
+        pygame.draw.rect(
+            self.displaySurface, color, 
+            (
+                col * self.blockSizeX, 
+                row * self.blockSizeY, 
+                self.blockSizeX, 
+                self.blockSizeY
+            ), 0
+        )
 
     def drawPlayer(self) -> None:
         if self.agent.lastRow is not None and self.agent.lastCol is not None:
@@ -174,11 +204,16 @@ class Application(object):
 
     def drawStart(self) -> None:
         row, col = self.maze.getStart()
-        pygame.draw.rect(self.displaySurface, (0, 0, 255), 
-                         (int(col * self.blockSizeX + self.blockSizeX / 4), 
-                          int(row * self.blockSizeY + self.blockSizeY / 4), 
-                          int(self.blockSizeX * 0.5), int(self.blockSizeY * 0.5)), 0)    
-
+        pygame.draw.rect(
+            self.displaySurface, (0, 0, 255), 
+            (
+                int(col * self.blockSizeX + self.blockSizeX / 4), 
+                int(row * self.blockSizeY + self.blockSizeY / 4), 
+                int(self.blockSizeX * 0.5), 
+                int(self.blockSizeY * 0.5)
+            ), 0
+        )
+    
     def drawMaze(self) -> None:
         for row in range(self.gridDim[0]):
             for col in range(self.gridDim[1]):

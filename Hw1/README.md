@@ -4,10 +4,9 @@
 Write your search algorithms in *`search.py`* and do not edit any other files, except for testing.
 
 ## Requirements:
-```
-python3
-pygame
-```
+* `pygame`
+* `python3`
+
 ## Running:
 The main file to run this homework is `hw1.py`:
 

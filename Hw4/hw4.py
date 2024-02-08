@@ -1,11 +1,13 @@
 import os
-import numpy as np
 import torch
+import numpy as np
+
 from PIL import Image
+from matplotlib import pyplot as plt
+from sklearn.linear_model import LogisticRegression
+
 from src.pca import PCA
 from src.autoencoder import Autoencoder, DenoisingAutoencoder
-from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
 
 #TODO: change to your data path
 DATA_PATH = './data'

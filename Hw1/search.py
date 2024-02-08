@@ -19,7 +19,9 @@ files and classes when code is run, so be careful to not modify anything else.
 # maze is a Maze object based on the maze from the file specified by input filename
 # searchMethod is the search method specified by --method flag (bfs,dfs,astar,astar_multi,fast)
 
-import math, heapq
+import math
+import heapq
+
 from maze import Maze
 from typing import Callable
 
@@ -118,10 +120,12 @@ class PriorityQueue(Queue):
         return heapq.heappop(self.container)
     
 
-def searching(maze: Maze, container: Queue | PriorityQueue, 
-              heuristic: Callable=None) -> list[tuple]:
-    """
-    A state representation model for searching algorithms.
+def searching(
+        maze: Maze, 
+        container: Queue | PriorityQueue, 
+        heuristic: Callable=None
+    ) -> list[tuple]:
+    """ A state representation model for searching algorithms.
     @param maze: The maze problem for searching.
     @param container: The date strcuture storing the node and access with priority.
     @param heuristic: The heuristic function using for searching.
@@ -145,20 +149,21 @@ def searching(maze: Maze, container: Queue | PriorityQueue,
         if not len(unvisited_target): # all target have been visited
             return path
         
-        if str(state) not in visisted:
-            visisted.append(str(state))
-            for n in maze.getNeighbors(pose[0], pose[1]):
-                next_state = (n, unvisited_target.copy())
-                if maze.isObjective(n[0], n[1]):
-                    next_state[1].discard(n)
+        if str(state) in visisted:
+            continue
 
-                container.push((
-                    heuristic(next_state) + len(path) if heuristic else None,
-                    next_state, path + [n]
-                ))
+        visisted.append(str(state))
+        for n in maze.getNeighbors(pose[0], pose[1]):
+            next_state = (n, unvisited_target.copy())
+            if maze.isObjective(n[0], n[1]):
+                next_state[1].discard(n)
+
+            container.push((
+                heuristic(next_state) + len(path) if heuristic else None,
+                next_state, path + [n]
+            ))
 
     return []
-
 
 def manhattan(pose1: tuple, pose2: tuple) -> int:
     """ Calculate the manhattan distance between two poses

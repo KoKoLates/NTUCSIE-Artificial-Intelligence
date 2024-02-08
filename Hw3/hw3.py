@@ -158,7 +158,6 @@ class LinearModel:
         exp = np.exp(z)
         return exp / np.sum(exp, axis=1, keepdims=True)
 
-
 class DecisionTree:
     def __init__(self, max_depth: int = 5, model_type: str = "classifier"):
         self.max_depth = max_depth
