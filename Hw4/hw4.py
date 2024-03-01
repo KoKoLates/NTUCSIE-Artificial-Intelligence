@@ -1,4 +1,5 @@
 import os
+import ipdb
 import torch
 import numpy as np
 
@@ -21,10 +22,8 @@ Tips for debugging:
     - `python -m ipdb -c continue hw3.py` to run the entire script in debug mode. Once the script is paused, you can use `n` to step through the code line by line.
 """
 
-def read_image():
-    """
-    DO NOT MODIFY THIS FUNCTION.
-    """
+def read_image() -> np.ndarray:
+    """ DO NOT MODIFY THIS FUNCTION. """
     file_path = './data/subject_05_17.png'  #TODO: change to your path
     img = Image.open(file_path).convert("L")
     img_array = np.array(img)
@@ -33,10 +32,8 @@ def read_image():
     return np.array(img_vector, dtype='float')
 
 
-def load_data(split: str) -> tuple[np.ndarray, np.ndarray]:
-    """
-    DO NOT MODIFY THIS FUNCTION.
-    """
+def load_data(split: str) -> tuple[np.ndarray]:
+    """ DO NOT MODIFY THIS FUNCTION. """
     data_path = DATA_PATH+'/'+split
     files = os.listdir(data_path)
     image_vectors = []
@@ -61,24 +58,24 @@ def load_data(split: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def compute_acc(y_pred: np.ndarray, y_val: np.ndarray):
-    """
-    DO NOT MODIFY THIS FUNCTION.
-    """
+    """ DO NOT MODIFY THIS FUNCTION. """
     return np.sum(y_pred == y_val) / len(y_val)
 
 
-
-def reconstruction_loss(img_vec: np.ndarray, img_vec_reconstructed: np.ndarray) -> float:
-    """
-    DO NOT MODIFY THIS FUNCTION.
-    """
+def reconstruction_loss(
+    img_vec: np.ndarray, 
+    img_vec_reconstructed: np.ndarray
+) -> float:
+    """ DO NOT MODIFY THIS FUNCTION. """
     return ((img_vec - img_vec_reconstructed) ** 2).mean()
 
-def main():
+
+def main() -> None:
+    # Prepare data
     print("Loading data...")
     X_train, y_train = load_data("train")
     X_val, y_val = load_data("val")
-    # Prepare data
+    
     # PCA
     pca = PCA(n_components=40)
     print("PCA Training Start...")
@@ -88,7 +85,7 @@ def main():
     autoencoder = Autoencoder(input_dim=4880, encoding_dim=488)
     print("Autoencoder Training Start...")
     autoencoder.fit(X_train, epochs=500, batch_size=135)
-    #
+
     # # DenoisingAutoencoder
     deno_autoencoder = DenoisingAutoencoder(input_dim=4880, encoding_dim=488)
     print("DenoisingAutoencoder Training Start...")

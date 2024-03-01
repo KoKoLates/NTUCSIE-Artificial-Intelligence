@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 """
 Implementation of Principal Component Analysis.
@@ -7,25 +7,24 @@ Implementation of Principal Component Analysis.
 class PCA:
     def __init__(self, n_components: int) -> None:
         self.n_components = n_components
-        self.mean = None
+        self.mean: np.ndarray = None
         self.components = None
 
     def fit(self, X: np.ndarray) -> None:
         #TODO: 10%
-        # Hint: Use existing method to calculate covariance matrix 
+        # Use existing method to calculate covariance matrix 
         # and its eigenvalues and eigenvectors
-        self.mean: np.ndarray = np.mean(X, axis=0)
-        covariance_matrix = np.cov(X - self.mean, rowvar=False)
+        self.mean = np.mean(X, axis=0)
+        convariance: np.ndarray = np.cov(X - self.mean, rowvar=False)
 
-        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
-        
-
-
+        eigenvaules, eigenvectors = np.linalg.eigh(convariance)
+        sorted_indices = np.argsort(eigenvaules)[::-1]
+        self.components = eigenvectors[:, sorted_indices][:, 0:self.n_components]
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         #TODO: 2%
-        raise NotImplementedError
+        return (X - self.mean) @ self.components
 
-    def reconstruct(self, X):
-        raise NotImplementedError
+    def reconstruct(self, X: np.ndarray) -> np.ndarray:
         #TODO: 2%
+        return self.transform(X) @ self.components.T + self.mean
