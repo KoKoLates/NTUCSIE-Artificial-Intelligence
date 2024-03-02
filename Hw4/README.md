@@ -1,18 +1,10 @@
-## Environments
-```
-# You can build the environments with the following commands:
-conda create -n fai_hw4 python=3.9
-conda activate fai_hw4
-pip install torch scikit-learn numpy pandas matplotlib pillow tqdm
-```
-## Programming
+# Hw4: PCA and Autoencoder
+pca, autoencoder and denoise autoencoder for image feature extraction and reconstruction.
 
-Finish the functions with #TODO in the following files:
-- `hw4.py`
-- `src/pca.py`
-- `src/autoencoder.py`
 
-❗❗❗ **Do not change other parts of the code.** ❗❗❗
-## Report
+## Traning Loss 
+The traning loss plot of autoencoder and denoise autoencoder. 
 
-Note that you are asked to plot images and training curve for your report, such codes are not included in #TODO; you should implement it by yourself.
+| autoencoder | denoise autoencoder |
+| -- | -- |
+|![image](./output/autoencoder.png)|![image](./output/denoise_autoencoder.png)       |
