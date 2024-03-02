@@ -8,5 +8,10 @@ python autograder.py
 ## Searching 
 Based on different heuristic with position score, ghost number and position, food density and also the capsule. The agent is expanded into state space tree and try on `minmax` and `expectimax`, with alpha-beta prunning as well.
 <div align="center">
-  <img src="./image/multi-agent.gif" alt="two ghost">
+  <img src="./image/two_ghost.gif" alt="two ghost" width="750">
+</div>
+
+## Simple Outcomes
+<div align="center">
+  <img src="./image/pacman.gif" alt="two ghost" width="750">
 </div>
