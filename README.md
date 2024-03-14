@@ -1,5 +1,2 @@
 # Foundations of Artificial Intelligence
-NTU CSIE Foundations of Artificial Intelligence practice assignments
-<div align="center">
-  <img src="./Hw2/image/pacman.gif" alt="pacman" width="800">
-</div>
+Assignments and simple outcomes of Foundation of Artificial Intelligence, Spring 2023 @ NTUCSIE.
